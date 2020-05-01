@@ -6,18 +6,19 @@ using Microsoft.Extensions.Logging;
 using StockDataProvider.Startup;
 using StockDataServices.DataServices;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace StockDataProvider
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var services = new ServiceCollection();
             ConfigureServices(services);
             var serviceProvider = services.BuildServiceProvider();
 
-            serviceProvider.GetService<IApplication>().Run();
+            await serviceProvider.GetService<IApplication>().Run();
         }
 
         private static void ConfigureServices(IServiceCollection services)

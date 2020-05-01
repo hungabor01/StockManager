@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using ConsoleUI.EventArgs;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ConsoleUI.CommandManager
 {
     public interface ICommandManager
     {
-        public void GetPrices();
+        public event EventHandler<PriceRetrievedEventArgs> PriceRerieved;
+
+        public Task GetPrices();
         public List<string[]> Search(string symbol);
     }
 }

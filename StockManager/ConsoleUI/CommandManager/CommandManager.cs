@@ -1,4 +1,5 @@
-﻿using ConsoleUI.FileOperations;
+﻿using ConsoleUI.EventArgs;
+using ConsoleUI.FileOperations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StockDataServices.DataServices;
@@ -16,6 +17,8 @@ namespace ConsoleUI.CommandManager
 
     public class CommandManager : ICommandManager
     {
+        public event EventHandler<PriceRetrievedEventArgs> PriceRerieved;
+
         private readonly string _inputFilePath;
         private readonly string _outputFilePath;
 
@@ -47,7 +50,7 @@ namespace ConsoleUI.CommandManager
             _outputFilePath = options.Value.OutputFilePath;
         }
 
-        public void GetPrices()
+        public async Task GetPrices()
         {
             var symbols = _fileOperations.ReadCsv(_inputFilePath);
 
@@ -63,6 +66,7 @@ namespace ConsoleUI.CommandManager
                     if (price.HasValue)
                     {
                         stocks.Add(symbol, price.Value);
+                        PriceRerieved(this, new PriceRetrievedEventArgs(symbol, price.Value));
                     }
                 }
                 catch (Exception e)
@@ -74,12 +78,11 @@ namespace ConsoleUI.CommandManager
                 if (counter % 5 == 0)
                 {
                     counter = 0;
-                    Task.Delay(61000);
+                    await Task.Delay(61000);
                 }                
             }
 
             _fileOperations.WriteCsv(stocks, _outputFilePath);
-
         }
 
         public List<string[]> Search(string symbol)
