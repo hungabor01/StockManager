@@ -1,5 +1,7 @@
 ﻿using ConsoleUI.CommandManager;
+using ConsoleUI.EventArgs;
 using System;
+using System.Threading.Tasks;
 
 namespace StockDataProvider.Startup
 {
@@ -12,7 +14,7 @@ namespace StockDataProvider.Startup
             _commandManager = commandManager;
         }
 
-        public void Run()
+        public async Task Run()
         {
             Console.WriteLine("To search for a symbol of a stock, type: search [symbol]");
             Console.WriteLine("To get the prices to the symbols in the file, type: getprices");
@@ -23,7 +25,8 @@ namespace StockDataProvider.Startup
             {
                 if (command == "getprices")
                 {
-                    _commandManager.GetPrices();
+                    _commandManager.PriceRerieved += OnPriceRetrieved;
+                    await _commandManager.GetPrices();
                     Console.WriteLine("The prices were successfully downloaded.");
                 }
                 else if (command.Contains("search"))
@@ -51,6 +54,11 @@ namespace StockDataProvider.Startup
 
             Console.WriteLine("Press any key to close the application.");
             Console.ReadKey();
+        }
+
+        private void OnPriceRetrieved(object sender, PriceRetrievedEventArgs e)
+        {
+            Console.WriteLine($"{e.Symbol}: {e.Price}");
         }
     }
 }

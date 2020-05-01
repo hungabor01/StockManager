@@ -1,7 +1,9 @@
-﻿namespace StockDataProvider.Startup
+﻿using System.Threading.Tasks;
+
+namespace StockDataProvider.Startup
 {
     public interface IApplication
     {
-        public void Run();
+        public Task Run();
     }
 }
