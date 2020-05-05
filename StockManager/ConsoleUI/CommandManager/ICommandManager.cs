@@ -11,5 +11,6 @@ namespace ConsoleUI.CommandManager
 
         public Task GetPrices();
         public List<string[]> Search(string symbol);
+        public List<string[]> GetMonthlyPrice(string symbol);
     }
 }

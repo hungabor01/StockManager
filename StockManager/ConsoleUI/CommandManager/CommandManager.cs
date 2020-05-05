@@ -97,5 +97,17 @@ namespace ConsoleUI.CommandManager
                 return null;
             }
         }
+        public List<string[]> GetMonthlyPrice(string symbol)
+        {
+            try
+            {
+                return _client.GetMonthlyPrice(symbol);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return null;
+            }
+        }
     }
 }
