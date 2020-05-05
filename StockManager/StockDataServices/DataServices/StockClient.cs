@@ -105,7 +105,7 @@ namespace StockDataServices.DataServices
                         match.High.ToString(),
                         match.Low.ToString(),
                         match.Open.ToString(),
-                        match.Price.ToString(),
+                        match.Close.ToString(),
                         match.Volume.ToString()
                     }) ;
                 }
