@@ -84,5 +84,38 @@ namespace StockDataServices.DataServices
 
             return matchList;
         }
+        public List<string[]> GetMonthlyPrice(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentNullException(nameof(symbol));
+            }
+
+            var matchList = new List<string[]>();
+
+            var parameter = new MonthlyTimeSeriesParameter(symbol);
+
+            try
+            {
+                var result = _dataProvider.GetDataList<MonthlyTimeSeries>(parameter);
+
+                foreach (var match in result)
+                {
+                    matchList.Add(new string[] {
+                        match.High.ToString(),
+                        match.Low.ToString(),
+                        match.Open.ToString(),
+                        match.Price.ToString(),
+                        match.Volume.ToString()
+                    }) ;
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
+            }
+
+            return matchList;
+        }
     }
 }
