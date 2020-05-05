@@ -6,6 +6,6 @@
         public decimal High { get; set; }
         public decimal Low { get; set; }
         public decimal Price { get; set; }
-        public decimal Volume { get; set; }
+        public int Volume { get; set; }
     }
 }
