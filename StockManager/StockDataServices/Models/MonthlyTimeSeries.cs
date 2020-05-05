@@ -1,7 +1,10 @@
-﻿namespace StockDataServices.Models
+﻿using System;
+
+namespace StockDataServices.Models
 {
     internal class MonthlyTimeSeries:IModel
     {
+        public DateTime TimeStamp { get; set; }
         public decimal Open { get; set; }
         public decimal High { get; set; }
         public decimal Low { get; set; }

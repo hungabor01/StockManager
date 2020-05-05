@@ -102,6 +102,7 @@ namespace StockDataServices.DataServices
                 foreach (var match in result)
                 {
                     matchList.Add(new string[] {
+                        match.TimeStamp.ToString(),
                         match.High.ToString(),
                         match.Low.ToString(),
                         match.Open.ToString(),
