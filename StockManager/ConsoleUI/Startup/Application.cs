@@ -18,6 +18,7 @@ namespace StockDataProvider.Startup
         {
             Console.WriteLine("To search for a symbol of a stock, type: search [symbol]");
             Console.WriteLine("To get the prices to the symbols in the file, type: getprices");
+            Console.WriteLine("To get the monthly prices to the symbols in the file, type: monthlyprice");
             Console.WriteLine("To quit, type: quit");
 
             string command;
@@ -33,6 +34,23 @@ namespace StockDataProvider.Startup
                 {
                     var symbol = command.Substring(7);
                     var matches = _commandManager.Search(symbol);
+
+                    if (matches != null && matches.Count > 0)
+                    {
+                        foreach (var match in matches)
+                        {
+                            Console.WriteLine(string.Join('\t', match));
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No result for {symbol}.");
+                    }
+                }
+                else if (command.Contains("monthlyprice"))
+                {
+                    var symbol = command.Substring(13);
+                    var matches = _commandManager.GetMonthlyPrice(symbol);
 
                     if (matches != null && matches.Count > 0)
                     {
