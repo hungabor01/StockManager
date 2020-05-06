@@ -119,7 +119,7 @@ namespace StockDataServices.DataServices
 
             return matchList;
         }
-        public List<string> GetPriceAndDeviation(string symbol)
+        public List<string> GetDailyPriceAndDeviation(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
             {
