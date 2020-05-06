@@ -5,6 +5,7 @@ using StockDataServices.Models;
 using StockDataServices.Parameters;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace StockDataServices.DataServices
 {
@@ -118,5 +119,43 @@ namespace StockDataServices.DataServices
 
             return matchList;
         }
+        public List<string> GetPriceAndDeviation(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentNullException(nameof(symbol));
+            }
+
+            var matchList = new List<double>();
+
+            var parameter = new DailyTimeSeriesParameter(symbol);
+
+            var priceAndDeviation = new List<String>();
+
+            try
+            {
+                List<TimeSeries> result = _dataProvider.GetDataList<TimeSeries>(parameter);
+
+                priceAndDeviation.Add(result[0].Close.ToString());
+
+                for (int i=0;i<result.Count;i++)
+                {
+                    if (result[i].TimeStamp.AddMonths(1) < DateTime.Today)
+                    {
+                        break;
+                    }
+                    matchList.Add((double)result[i].Open);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
+            }
+
+            double avg = matchList.Average();
+            priceAndDeviation.Add(Math.Sqrt(matchList.Average(v => Math.Pow(v - avg, 2))).ToString());
+            return priceAndDeviation;
+        }
     }
+
 }
