@@ -109,5 +109,18 @@ namespace ConsoleUI.CommandManager
                 return null;
             }
         }
+
+        public List<string> GetDailyPriceAndDeviation(string symbol)
+        {
+            try
+            {
+                return _client.GetDailyPriceAndDeviation(symbol);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return null;
+            }
+        }
     }
 }
