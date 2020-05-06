@@ -153,7 +153,8 @@ namespace StockDataServices.DataServices
             }
 
             double avg = matchList.Average();
-            priceAndDeviation.Add(Math.Sqrt(matchList.Average(v => Math.Pow(v - avg, 2))).ToString());
+            var sum = matchList.Sum(d => Math.Pow(d - avg, 2));
+            priceAndDeviation.Add(Math.Sqrt((sum) / (matchList.Count() - 1)).ToString());
             return priceAndDeviation;
         }
     }
