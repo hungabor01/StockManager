@@ -97,7 +97,7 @@ namespace StockDataServices.DataServices
 
             try
             {
-                var result = _dataProvider.GetDataList<MonthlyTimeSeries>(parameter);
+                var result = _dataProvider.GetDataList<TimeSeries>(parameter);
 
                 foreach (var match in result)
                 {
