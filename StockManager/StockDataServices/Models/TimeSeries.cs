@@ -2,7 +2,7 @@
 
 namespace StockDataServices.Models
 {
-    internal class TimeSeries:IModel
+    internal class TimeSeries : IModel
     {
         public DateTime TimeStamp { get; set; }
         public decimal Open { get; set; }
