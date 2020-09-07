@@ -5,21 +5,23 @@ using StockDataServices.Models;
 using StockDataServices.Parameters;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace StockDataServices.DataServices
 {
-    public class StockClientSettings
+    public class StockClientOptions
     {
         public string ApiKey { get; set; }
+        public int DeviationCalculationRange { get; set; }
     }
 
     public class StockClient : IStockClient
     {
+        private readonly int _deviationCalculationRange;
+
         private readonly IDataProvider _dataProvider;
         private readonly ILogger<StockClient> _logger;
 
-        public StockClient(IOptions<StockClientSettings> options, ILogger<StockClient> logger)
+        public StockClient(IOptions<StockClientOptions> options, ILogger<StockClient> logger)
         {
             _logger = logger;
 
@@ -28,8 +30,10 @@ namespace StockDataServices.DataServices
                 throw new ArgumentNullException(nameof(options.Value.ApiKey));
             }
             
-            var apikey = options?.Value.ApiKey;
+            var apikey = options.Value.ApiKey;
             _dataProvider = new AlphaVantageDataProvider(apikey);
+
+            _deviationCalculationRange = options.Value.DeviationCalculationRange;
         }
 
         public decimal? GetPrice(string symbol)
@@ -39,12 +43,11 @@ namespace StockDataServices.DataServices
                 throw new ArgumentNullException(nameof(symbol));
             }
 
-            var parameter = new GlobalQuoteParameter(symbol);
-
             try
             {
+                var parameter = new GlobalQuoteParameter(symbol);
                 var result = _dataProvider.GetData<GlobalQuote>(parameter);
-                return result.Price;
+                return result?.Price;
             }
             catch (Exception e)
             {
@@ -62,20 +65,22 @@ namespace StockDataServices.DataServices
 
             var matchList = new List<string[]>();
 
-            var parameter = new SearchParameter(symbol);
-
             try
             {
+                var parameter = new SearchParameter(symbol);
                 var result = _dataProvider.GetDataList<BestMatch>(parameter);
 
-                foreach (var match in result)
+                if (result != null)
                 {
-                    matchList.Add(new string[] {
-                        match.Symbol,
-                        match.Name,
-                        match.Region,
-                        match.Currency
-                    });
+                    foreach (var match in result)
+                    {
+                        matchList.Add(new string[] {
+                            match.Symbol,
+                            match.Name,
+                            match.Region,
+                            match.Currency
+                        });
+                    }
                 }
             } 
             catch (Exception e)
@@ -84,79 +89,39 @@ namespace StockDataServices.DataServices
             }
 
             return matchList;
-        }
-        public List<string[]> GetMonthlyPrice(string symbol)
+        }        
+
+        public List<decimal> GetPricesAndDeviations(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
             {
                 throw new ArgumentNullException(nameof(symbol));
             }
 
-            var matchList = new List<string[]>();
-
-            var parameter = new MonthlyTimeSeriesParameter(symbol);
+            var prices = new List<decimal>();
 
             try
             {
+                var parameter = new DailyTimeSeriesParameter(symbol);
                 var result = _dataProvider.GetDataList<TimeSeries>(parameter);
 
-                foreach (var match in result)
+                if (result != null)
                 {
-                    matchList.Add(new string[] {
-                        match.TimeStamp.ToString(),
-                        match.High.ToString(),
-                        match.Low.ToString(),
-                        match.Open.ToString(),
-                        match.Close.ToString(),
-                        match.Volume.ToString()
-                    }) ;
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
-            }
-
-            return matchList;
-        }
-        public List<string> GetDailyPriceAndDeviation(string symbol)
-        {
-            if (string.IsNullOrWhiteSpace(symbol))
-            {
-                throw new ArgumentNullException(nameof(symbol));
-            }
-
-            var matchList = new List<double>();
-
-            var parameter = new DailyTimeSeriesParameter(symbol);
-
-            var priceAndDeviation = new List<String>();
-
-            try
-            {
-                List<TimeSeries> result = _dataProvider.GetDataList<TimeSeries>(parameter);
-
-                priceAndDeviation.Add(result[0].Close.ToString());
-
-                for (int i=0;i<result.Count;i++)
-                {
-                    if (result[i].TimeStamp.AddMonths(1) < DateTime.Today)
+                    foreach (var timeSeries in result)
                     {
-                        break;
+                        if (timeSeries.TimeStamp.AddDays(_deviationCalculationRange) > DateTime.Today)
+                        {
+                            prices.Add(timeSeries.Close);
+                        }
                     }
-                    matchList.Add((double)result[i].Open);
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
+                _logger.LogError(e, $"Failed to get prices and deviations for {symbol}. {e.Message}");
             }
 
-            double avg = matchList.Average();
-            var sum = matchList.Sum(d => Math.Pow(d - avg, 2));
-            priceAndDeviation.Add(Math.Sqrt((sum) / (matchList.Count() - 1)).ToString());
-            return priceAndDeviation;
+            return prices;            
         }
     }
-
 }
