@@ -8,17 +8,20 @@ using System.Collections.Generic;
 
 namespace StockDataServices.DataServices
 {
-    public class StockClientSettings
+    public class StockClientOptions
     {
         public string ApiKey { get; set; }
+        public int DeviationCalculationRange { get; set; }
     }
 
     public class StockClient : IStockClient
     {
+        private readonly int _deviationCalculationRange;
+
         private readonly IDataProvider _dataProvider;
         private readonly ILogger<StockClient> _logger;
 
-        public StockClient(IOptions<StockClientSettings> options, ILogger<StockClient> logger)
+        public StockClient(IOptions<StockClientOptions> options, ILogger<StockClient> logger)
         {
             _logger = logger;
 
@@ -27,8 +30,10 @@ namespace StockDataServices.DataServices
                 throw new ArgumentNullException(nameof(options.Value.ApiKey));
             }
             
-            var apikey = options?.Value.ApiKey;
+            var apikey = options.Value.ApiKey;
             _dataProvider = new AlphaVantageDataProvider(apikey);
+
+            _deviationCalculationRange = options.Value.DeviationCalculationRange;
         }
 
         public decimal? GetPrice(string symbol)
@@ -38,12 +43,11 @@ namespace StockDataServices.DataServices
                 throw new ArgumentNullException(nameof(symbol));
             }
 
-            var parameter = new GlobalQuoteParameter(symbol);
-
             try
             {
+                var parameter = new GlobalQuoteParameter(symbol);
                 var result = _dataProvider.GetData<GlobalQuote>(parameter);
-                return result.Price;
+                return result?.Price;
             }
             catch (Exception e)
             {
@@ -61,20 +65,22 @@ namespace StockDataServices.DataServices
 
             var matchList = new List<string[]>();
 
-            var parameter = new SearchParameter(symbol);
-
             try
             {
+                var parameter = new SearchParameter(symbol);
                 var result = _dataProvider.GetDataList<BestMatch>(parameter);
 
-                foreach (var match in result)
+                if (result != null)
                 {
-                    matchList.Add(new string[] {
-                        match.Symbol,
-                        match.Name,
-                        match.Region,
-                        match.Currency
-                    });
+                    foreach (var match in result)
+                    {
+                        matchList.Add(new string[] {
+                            match.Symbol,
+                            match.Name,
+                            match.Region,
+                            match.Currency
+                        });
+                    }
                 }
             } 
             catch (Exception e)
@@ -83,6 +89,39 @@ namespace StockDataServices.DataServices
             }
 
             return matchList;
+        }        
+
+        public List<decimal> GetPricesAndDeviations(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentNullException(nameof(symbol));
+            }
+
+            var prices = new List<decimal>();
+
+            try
+            {
+                var parameter = new DailyTimeSeriesParameter(symbol);
+                var result = _dataProvider.GetDataList<TimeSeries>(parameter);
+
+                if (result != null)
+                {
+                    foreach (var timeSeries in result)
+                    {
+                        if (timeSeries.TimeStamp.AddDays(_deviationCalculationRange) > DateTime.Today)
+                        {
+                            prices.Add(timeSeries.Close);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to get prices and deviations for {symbol}. {e.Message}");
+            }
+
+            return prices;            
         }
     }
 }

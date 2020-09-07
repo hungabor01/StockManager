@@ -1,14 +1,14 @@
-﻿namespace ConsoleUI.EventArgs
+﻿using ConsoleUI.Models;
+
+namespace ConsoleUI.EventArgs
 {
     public class PriceRetrievedEventArgs : System.EventArgs
     {
-        public string Symbol { get; set; }
-        public decimal Price { get; set; }
+        public Stock Stock { get; set; }
 
-        public PriceRetrievedEventArgs(string symbol, decimal price)
+        public PriceRetrievedEventArgs(Stock stock)
         {
-            Symbol = symbol;
-            Price = price;
+            Stock = stock;
         }
     }
 }

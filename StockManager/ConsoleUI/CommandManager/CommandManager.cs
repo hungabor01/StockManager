@@ -1,15 +1,18 @@
 ﻿using ConsoleUI.EventArgs;
+using ConsoleUI.ExtensionMethods;
 using ConsoleUI.FileOperations;
+using ConsoleUI.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StockDataServices.DataServices;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleUI.CommandManager
 {
-    public class CommandManagerSettings
+    public class CommandManagerOptions
     {
         public string InputFilePath { get; set; }
         public string OutputFilePath { get; set; }
@@ -26,7 +29,7 @@ namespace ConsoleUI.CommandManager
         private readonly IFileOperations _fileOperations;
         private readonly IStockClient _client;
 
-        public CommandManager(IStockClient client, ILogger<CommandManager> logger, IFileOperations fileOperations, IOptions<CommandManagerSettings> options)
+        public CommandManager(IStockClient client, ILogger<CommandManager> logger, IFileOperations fileOperations, IOptions<CommandManagerOptions> options)
         {
             _logger = logger;
             _fileOperations = fileOperations;
@@ -50,23 +53,32 @@ namespace ConsoleUI.CommandManager
             _outputFilePath = options.Value.OutputFilePath;
         }
 
-        public async Task GetPrices()
+        public async Task GetPricesAndDeviation()
         {
             var symbols = _fileOperations.ReadCsv(_inputFilePath);
 
-            var stocks = new Dictionary<string, decimal>();
+            var stocks = new List<Stock>();
 
             int counter = 0;
+
             foreach (var symbol in symbols)
             {                
                 try
                 {
-                    var price = _client.GetPrice(symbol);
+                    var prices = _client.GetPricesAndDeviations(symbol);
 
-                    if (price.HasValue)
-                    {
-                        stocks.Add(symbol, price.Value);
-                        PriceRerieved(this, new PriceRetrievedEventArgs(symbol, price.Value));
+                    if (prices?.Count > 0)
+                    {   
+                        var stock = new Stock
+                        {
+                            Symbol = symbol,
+                            Price = prices.First(),
+                            Deviation = prices.GetDeviation()
+                        };
+
+                        stocks.Add(stock);
+
+                        PriceRerieved(this, new PriceRetrievedEventArgs(stock));
                     }
                 }
                 catch (Exception e)
