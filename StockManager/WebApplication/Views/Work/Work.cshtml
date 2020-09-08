@@ -1,0 +1,55 @@
+﻿
+@model IEnumerable<StockSearch>
+
+@{
+    ViewData["Title"] = "Work";
+}
+<h1>@ViewData["Title"]</h1>
+<h1>Részvény keresése</h1>
+<form class="form-inline" method="get" onsubmit="location.href = '/api/Work/search/' + document.getElementById('stockName').value; return false;">
+    <div class="form-group">
+        <input class="form-control" type="text" style="margin:6px;" id="stockName" placeholder="Search" aria-label="Könyv cím">
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Symbol
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Region
+            </th>
+            <th>
+                Currency
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null) {
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Symbol)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Region)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Currenc)
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
