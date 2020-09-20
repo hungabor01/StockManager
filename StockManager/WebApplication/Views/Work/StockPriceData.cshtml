@@ -1,0 +1,47 @@
+﻿
+@model IEnumerable<GlobalQuote>
+
+@{
+    ViewData["Title"] = "StockPriceData";
+}
+<p>Stockdata</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Symbol
+            </th>
+            <th>
+                Low
+            </th>
+            <th>
+                High
+            </th>
+            <th>
+                Price
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null)
+        {
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.ActionLink($"{item.Symbol}", "StockPriceData", new { Symbol = item.Symbol }, new { @class = "btn btn-danger" })
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.High)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Low)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Price)
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

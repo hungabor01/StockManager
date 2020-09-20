@@ -14,7 +14,9 @@ namespace WebApplication.Controllers
     {
         private readonly IStockClient client;
         private  IEnumerable<StockSearch> stockSearch = new List<StockSearch>();
-        public IActionResult Work()
+        private IEnumerable<GlobalQuote> globalQuote = new List<GlobalQuote>();
+        [HttpGet]
+        public IActionResult Index()
         {
             return View();
         }
@@ -24,7 +26,7 @@ namespace WebApplication.Controllers
         }
 
         [HttpGet("{stockName}")]
-        public ActionResult Work(string stockName)
+        public ActionResult Index(string stockName)
         {
             if(stockName == null){
                 return View();
@@ -35,12 +37,42 @@ namespace WebApplication.Controllers
             {
                 stockSearch = stockSearch.Append(new StockSearch {
                     Symbol = item[0],
-                    Region = item[1],
-                    Name   = item[2],
+                    Name = item[1],
+                    Region   = item[2],
                     Currenc= item[3]
                 });
             }
             ViewData.Model = stockSearch;
+
+            return View();
+        }
+        [HttpGet("StockPriceData")]
+        public ActionResult StockPriceData()
+        {
+            var stockValue = Request.Query["Symbol"].ToString();
+            if (stockValue == null)
+            {
+                return View();
+            }
+            List<string[]> stocks = client.GetStockPriceData(stockValue);
+
+            foreach (var item in stocks)
+            {
+                globalQuote = globalQuote.Append(new GlobalQuote
+                {
+                            Symbol = item[0],
+                            Open = Decimal.Parse(item[1]),
+                            High = Decimal.Parse(item[2]),
+                            Low = Decimal.Parse(item[3]),
+                            Price=Decimal.Parse(item[4]),
+                            Volume = Decimal.Parse(item[5]),
+                            LatestTradingDay=item[6],
+                            PreviousClose = Decimal.Parse(item[7]),
+                            Change = Decimal.Parse(item[8]),
+                            ChangePercent = item[9]
+                });
+            }
+            ViewData.Model = globalQuote;
 
             return View();
         }

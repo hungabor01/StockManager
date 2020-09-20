@@ -157,6 +157,43 @@ namespace StockDataServices.DataServices
             priceAndDeviation.Add(Math.Sqrt((sum) / (matchList.Count() - 1)).ToString());
             return priceAndDeviation;
         }
+        public List<string[]> GetStockPriceData(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentNullException(nameof(symbol));
+            }
+
+            var parameter = new GlobalQuoteParameter(symbol);
+
+            try
+            {
+                var result = _dataProvider.GetData<GlobalQuote>(parameter);
+
+                List<string[]> dataList = new List<string[]>();
+
+                dataList.Add(new string[] {
+                            result.Symbol,
+                            result.Open.ToString(),
+                            result.High.ToString(),
+                            result.Low.ToString(),
+                            result.Price.ToString(),
+                            result.Volume.ToString(),
+                            result.LatestTradingDay,
+                            result.PreviousClose.ToString(),
+                            result.Change.ToString(),
+                            result.ChangePercent
+                });
+
+                return dataList;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to retrieve the price for {symbol}. {e.Message}");
+                return null;
+            }
+        }
     }
+    
 
 }

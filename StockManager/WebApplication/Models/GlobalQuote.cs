@@ -1,6 +1,11 @@
-﻿namespace StockDataServices.Models
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace WebApplication.Models
 {
-    public class GlobalQuote : IModel
+    public class GlobalQuote
     {
         public string Symbol { get; set; }
         public decimal Open { get; set; }

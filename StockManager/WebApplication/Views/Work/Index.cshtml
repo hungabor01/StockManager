@@ -2,9 +2,8 @@
 @model IEnumerable<StockSearch>
 
 @{
-    ViewData["Title"] = "Work";
+    ViewData["Title"] = "Index";
 }
-<h1>@ViewData["Title"]</h1>
 <h1>Részvény keresése</h1>
 <form class="form-inline" method="get" onsubmit="location.href = '/api/Work/search/' + document.getElementById('stockName').value; return false;">
     <div class="form-group">
@@ -31,12 +30,13 @@
         </tr>
     </thead>
     <tbody>
-        @if (Model != null) {
+        @if (Model != null)
+        {
             @foreach (var item in Model)
             {
                 <tr>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Symbol)
+                        @Html.ActionLink($"{item.Symbol}", "StockPriceData", new { Symbol = item.Symbol }, new { @class = "btn btn-danger" })
                     </td>
                     <td>
                         @Html.DisplayFor(modelItem => item.Name)
