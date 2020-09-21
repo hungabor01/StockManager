@@ -34,13 +34,13 @@ namespace StockDataProvider
                 .AddJsonFile("appsettings.json", optional: false)
                 .Build();
 
-            services.Configure<StockClientSettings>(configuration.GetSection("StockClient"));
+            services.Configure<StockClientOptions>(configuration.GetSection(nameof(StockClientOptions)));
             services.AddTransient<IStockClient, StockClient>();
 
-            services.Configure<CsvOperationsSettings>(configuration.GetSection("CsvOperations"));
+            services.Configure<CsvOperationsOptions>(configuration.GetSection(nameof(CsvOperationsOptions)));
             services.AddTransient<IFileOperations, CsvOperations>();
 
-            services.Configure<CommandManagerSettings>(configuration.GetSection("CommandManager"));
+            services.Configure<CommandManagerOptions>(configuration.GetSection(nameof(CommandManagerOptions)));
             services.AddTransient<ICommandManager, CommandManager>();
 
             services.AddSingleton<IApplication, Application>();

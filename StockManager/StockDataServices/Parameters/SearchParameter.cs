@@ -1,4 +1,6 @@
-﻿namespace StockDataServices.Parameters
+﻿using Common;
+
+namespace StockDataServices.Parameters
 {
     internal class SearchParameter : IParameter
     {
@@ -7,6 +9,7 @@
 
         public SearchParameter(string symbol)
         {
+            symbol.ThrowExceptionIfNullOrWhiteSpace(nameof(symbol));
             Symbol = symbol;
         }
     }

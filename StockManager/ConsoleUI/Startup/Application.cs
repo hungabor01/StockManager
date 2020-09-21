@@ -7,6 +7,10 @@ namespace StockDataProvider.Startup
 {
     public class Application : IApplication
     {
+        private const char PricesIdentifier = 'p';
+        private const char SearchIdentifier = 's';
+        private const string QuitIdentifier = "q";
+
         private readonly ICommandManager _commandManager;
 
         public Application(ICommandManager commandManager)
@@ -16,82 +20,67 @@ namespace StockDataProvider.Startup
 
         public async Task Run()
         {
-            Console.WriteLine("To search for a symbol of a stock, type: search [symbol]");
-            Console.WriteLine("To get the prices to the symbols in the file, type: getprices");
-            Console.WriteLine("To get the monthly prices to the symbols in the file, type: monthlyprice");
-            Console.WriteLine("To get the prices and deviation to the symbols in the file, type: pad");
-            Console.WriteLine("To quit, type: quit");
+            Console.WriteLine($"To get the prices and deviations to the symbols in the file, type: {PricesIdentifier}");
+            Console.WriteLine($"To search for a symbol of a stock, type: {SearchIdentifier} [symbol]");
+            Console.WriteLine("To quit from the application, type: q");
 
             string command;
-            while((command = Console.ReadLine().ToLower()) != "quit")
+            while ((command = Console.ReadLine().ToLower()) != QuitIdentifier)
             {
-                if (command == "getprices")
+                if (string.IsNullOrWhiteSpace(command))
                 {
-                    _commandManager.PriceRerieved += OnPriceRetrieved;
-                    await _commandManager.GetPrices();
-                    Console.WriteLine("The prices were successfully downloaded.");
+                    continue;
                 }
-                else if (command.Contains("search"))
-                {
-                    var symbol = command.Substring(7);
-                    var matches = _commandManager.Search(symbol);
 
-                    if (matches != null && matches.Count > 0)
-                    {
-                        foreach (var match in matches)
-                        {
-                            Console.WriteLine(string.Join('\t', match));
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No result for {symbol}.");
-                    }
-                }
-                else if (command.Contains("monthlyprice"))
+                switch (command[0])
                 {
-                    var symbol = command.Substring(13);
-                    var matches = _commandManager.GetMonthlyPrice(symbol);
-
-                    if (matches != null && matches.Count > 0)
-                    {
-                        foreach (var match in matches)
-                        {
-                            Console.WriteLine(string.Join('\t', match));
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No result for {symbol}.");
-                    }
+                    case 'p':
+                        await GetPricesAndDeviation();
+                        break;
+                    case 's':
+                        Search(command);
+                        break;
+                    default:
+                        Console.WriteLine("Unknown command.");
+                        break;
                 }
-                else if (command.Contains("pad"))
-                {
-                    var symbol = command.Substring(4);
-                    var matches = _commandManager.GetDailyPriceAndDeviation(symbol);
+            }
+        }
 
-                    if (matches != null && matches.Count > 0)
-                    {
-                        Console.WriteLine("price: " + matches[0] + '\t' + "deviation: " + matches[1]);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No result for {symbol}.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Unknown command.");
-                }
-            }            
-
-            Console.WriteLine("Press any key to close the application.");
-            Console.ReadKey();
+        private async Task GetPricesAndDeviation()
+        {
+            _commandManager.PriceRerieved += OnPriceRetrieved;
+            await _commandManager.GetPricesAndDeviation();
+            Console.WriteLine("Finished downloading the prices and deviatons.");
         }
 
         private void OnPriceRetrieved(object sender, PriceRetrievedEventArgs e)
         {
-            Console.WriteLine($"{e.Symbol}: {e.Price}");
+            Console.WriteLine($"{e.Stock.Symbol}: {e.Stock.Price} {e.Stock.Deviation}");
         }
+
+        private void Search(string command)
+        {
+            if (command.Length <= 2)
+            {
+                Console.WriteLine("No symbol entered.");
+                return;
+            }
+
+            var symbol = command.Substring($"{SearchIdentifier} ".Length);
+
+            var matches = _commandManager.Search(symbol);
+
+            if (matches == null || matches.Count == 0)
+            {
+                Console.WriteLine($"No result for {symbol}.");
+                return;
+            }
+            
+            foreach (var match in matches)
+            {
+                Console.WriteLine(string.Join('\t', match));
+            }
+        }        
     }
 }

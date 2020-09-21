@@ -1,73 +1,106 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StockDataServices.DataProviders;
 using StockDataServices.Models;
 using StockDataServices.Parameters;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace StockDataServices.DataServices
 {
-    public class StockClientSettings
+    public class StockClientOptions
     {
         public string ApiKey { get; set; }
+        public int DeviationCalculationRange { get; set; }
     }
 
     public class StockClient : IStockClient
     {
+        private readonly int _deviationCalculationRange;
+
         private readonly IDataProvider _dataProvider;
         private readonly ILogger<StockClient> _logger;
 
-        public StockClient(IOptions<StockClientSettings> options, ILogger<StockClient> logger)
+        public StockClient(IOptions<StockClientOptions> options, ILogger<StockClient> logger)
         {
             _logger = logger;
 
-            if (options == null || options.Value == null || string.IsNullOrWhiteSpace(options.Value.ApiKey))
-            {
-                throw new ArgumentNullException(nameof(options.Value.ApiKey));
-            }
+            options.ThrowExceptionIfOptionNotValid(nameof(StockClientOptions));
+            options.Value.ApiKey.ThrowExceptionIfNullOrWhiteSpace(nameof(options.Value.ApiKey));
             
-            var apikey = options?.Value.ApiKey;
+            var apikey = options.Value.ApiKey;
             _dataProvider = new AlphaVantageDataProvider(apikey);
+
+            _deviationCalculationRange = options.Value.DeviationCalculationRange > 0 ? options.Value.DeviationCalculationRange : 30;
         }
 
-        public decimal? GetPrice(string symbol)
+        public decimal? GetStockPrice(string symbol)
         {
-            if (string.IsNullOrWhiteSpace(symbol))
-            {
-                throw new ArgumentNullException(nameof(symbol));
-            }
-
-            var parameter = new GlobalQuoteParameter(symbol);
+            symbol.ThrowExceptionIfNullOrWhiteSpace(nameof(symbol));
 
             try
             {
+                var parameter = new GlobalQuoteParameter(symbol);
                 var result = _dataProvider.GetData<GlobalQuote>(parameter);
-                return result.Price;
+                return result?.Price;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Failed to retrieve the price for {symbol}. {e.Message}");
+                _logger.LogError(e, $"Failed to get the price for {symbol}. {e.Message}");
+                return null;
+            }
+        }
+
+        public string[] GetStockData(string symbol)
+        {
+            symbol.ThrowExceptionIfNullOrWhiteSpace(nameof(symbol));            
+
+            try
+            {
+                var parameter = new GlobalQuoteParameter(symbol);
+                var result = _dataProvider.GetData<GlobalQuote>(parameter);                
+
+                if (result == null)
+                {
+                    return null;
+                }
+
+                return new string[] {
+                    result.Symbol,
+                    result.Open.ToString(),
+                    result.High.ToString(),
+                    result.Low.ToString(),
+                    result.Price.ToString(),
+                    result.Volume.ToString(),
+                    result.LatestTradingDay,
+                    result.PreviousClose.ToString(),
+                    result.Change.ToString(),
+                    result.ChangePercent
+                };
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Failed to get the data for {symbol}. {e.Message}");
                 return null;
             }
         }
 
         public List<string[]> Search(string symbol)
         {
-            if (string.IsNullOrWhiteSpace(symbol))
-            {
-                throw new ArgumentNullException(nameof(symbol));
-            }
-
-            var matchList = new List<string[]>();
-
-            var parameter = new SearchParameter(symbol);
+            symbol.ThrowExceptionIfNullOrWhiteSpace(nameof(symbol));            
 
             try
             {
+                var parameter = new SearchParameter(symbol);
                 var result = _dataProvider.GetDataList<BestMatch>(parameter);
 
+                if (result == null)
+                {
+                    return null;
+                }
+
+                var matchList = new List<string[]>();
                 foreach (var match in result)
                 {
                     matchList.Add(new string[] {
@@ -77,123 +110,44 @@ namespace StockDataServices.DataServices
                         match.Currency
                     });
                 }
+                return matchList;
             } 
             catch (Exception e)
             {
                 _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
-            }
+                return null;
+            }            
+        }        
 
-            return matchList;
-        }
-        public List<string[]> GetMonthlyPrice(string symbol)
+        public List<decimal> GetPricesAndDeviations(string symbol)
         {
-            if (string.IsNullOrWhiteSpace(symbol))
-            {
-                throw new ArgumentNullException(nameof(symbol));
-            }
-
-            var matchList = new List<string[]>();
-
-            var parameter = new MonthlyTimeSeriesParameter(symbol);
+            symbol.ThrowExceptionIfNullOrWhiteSpace(nameof(symbol));
 
             try
             {
+                var parameter = new DailyTimeSeriesParameter(symbol);
                 var result = _dataProvider.GetDataList<TimeSeries>(parameter);
 
-                foreach (var match in result)
+                if (result == null)
                 {
-                    matchList.Add(new string[] {
-                        match.TimeStamp.ToString(),
-                        match.High.ToString(),
-                        match.Low.ToString(),
-                        match.Open.ToString(),
-                        match.Close.ToString(),
-                        match.Volume.ToString()
-                    }) ;
+                    return null;
                 }
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
-            }
 
-            return matchList;
-        }
-        public List<string> GetDailyPriceAndDeviation(string symbol)
-        {
-            if (string.IsNullOrWhiteSpace(symbol))
-            {
-                throw new ArgumentNullException(nameof(symbol));
-            }
-
-            var matchList = new List<double>();
-
-            var parameter = new DailyTimeSeriesParameter(symbol);
-
-            var priceAndDeviation = new List<String>();
-
-            try
-            {
-                List<TimeSeries> result = _dataProvider.GetDataList<TimeSeries>(parameter);
-
-                priceAndDeviation.Add(result[0].Close.ToString());
-
-                for (int i=0;i<result.Count;i++)
+                var prices = new List<decimal>();
+                foreach (var timeSeries in result)
                 {
-                    if (result[i].TimeStamp.AddMonths(1) < DateTime.Today)
+                    if (timeSeries.TimeStamp.AddDays(_deviationCalculationRange) > DateTime.Today)
                     {
-                        break;
+                        prices.Add(timeSeries.Close);
                     }
-                    matchList.Add((double)result[i].Open);
                 }
+                return prices;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, $"Failed to search for {symbol}. {e.Message}");
-            }
-
-            double avg = matchList.Average();
-            var sum = matchList.Sum(d => Math.Pow(d - avg, 2));
-            priceAndDeviation.Add(Math.Sqrt((sum) / (matchList.Count() - 1)).ToString());
-            return priceAndDeviation;
-        }
-        public List<string[]> GetStockPriceData(string symbol)
-        {
-            if (string.IsNullOrWhiteSpace(symbol))
-            {
-                throw new ArgumentNullException(nameof(symbol));
-            }
-
-            var parameter = new GlobalQuoteParameter(symbol);
-
-            try
-            {
-                var result = _dataProvider.GetData<GlobalQuote>(parameter);
-
-                List<string[]> dataList = new List<string[]>();
-
-                dataList.Add(new string[] {
-                            result.Symbol,
-                            result.Open.ToString(),
-                            result.High.ToString(),
-                            result.Low.ToString(),
-                            result.Price.ToString(),
-                            result.Volume.ToString(),
-                            result.LatestTradingDay,
-                            result.PreviousClose.ToString(),
-                            result.Change.ToString(),
-                            result.ChangePercent
-                });
-
-                return dataList;
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, $"Failed to retrieve the price for {symbol}. {e.Message}");
+                _logger.LogError(e, $"Failed to get prices and deviations for {symbol}. {e.Message}");
                 return null;
-            }
-        }
-    }
-    
-
+            }            
+        }        
+    }  
 }
