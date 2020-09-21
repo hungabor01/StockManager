@@ -9,9 +9,7 @@ namespace ConsoleUI.CommandManager
     {
         public event EventHandler<PriceRetrievedEventArgs> PriceRerieved;
 
-        public Task GetPrices();
+        public Task GetPricesAndDeviation();
         public List<string[]> Search(string symbol);
-        public List<string[]> GetMonthlyPrice(string symbol);
-        public List<string> GetDailyPriceAndDeviation(string symbol);
     }
 }

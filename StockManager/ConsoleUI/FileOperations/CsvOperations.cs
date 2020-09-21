@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ConsoleUI.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.IO;
 
 namespace ConsoleUI.FileOperations
 {
-    public class CsvOperationsSettings
+    public class CsvOperationsOptions
     {
         public string CsvDelimiter { get; set; }
     }
@@ -17,7 +18,7 @@ namespace ConsoleUI.FileOperations
 
         private readonly ILogger<CsvOperations> _logger;
 
-        public CsvOperations(IOptions<CsvOperationsSettings> options, ILogger<CsvOperations> logger)
+        public CsvOperations(IOptions<CsvOperationsOptions> options, ILogger<CsvOperations> logger)
         {
             _logger = logger;
 
@@ -53,7 +54,7 @@ namespace ConsoleUI.FileOperations
             return symbols;
         }
 
-        public void WriteCsv(Dictionary<string, decimal> stocks, string path)
+        public void WriteCsv(List<Stock> stocks, string path)
         {
             try
             { 
@@ -61,7 +62,7 @@ namespace ConsoleUI.FileOperations
                 {
                     foreach (var stock in stocks)
                     {
-                        writer.WriteLine(string.Join(_delimiter, stock.Key, stock.Value.ToString()));
+                        writer.WriteLine(string.Join(_delimiter, stock.Symbol, stock.Price.ToString(), stock.Deviation.ToString()));
                     }
                 }
             }
