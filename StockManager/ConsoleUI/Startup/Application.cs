@@ -9,7 +9,7 @@ namespace StockDataProvider.Startup
     {
         private const char PricesIdentifier = 'p';
         private const char SearchIdentifier = 's';
-        private const string QuithIdentifier = "q";
+        private const string QuitIdentifier = "q";
 
         private readonly ICommandManager _commandManager;
 
@@ -25,7 +25,7 @@ namespace StockDataProvider.Startup
             Console.WriteLine("To quit from the application, type: q");
 
             string command;
-            while ((command = Console.ReadLine().ToLower()) != QuithIdentifier)
+            while ((command = Console.ReadLine().ToLower()) != QuitIdentifier)
             {
                 if (string.IsNullOrWhiteSpace(command))
                 {
@@ -54,6 +54,11 @@ namespace StockDataProvider.Startup
             Console.WriteLine("Finished downloading the prices and deviatons.");
         }
 
+        private void OnPriceRetrieved(object sender, PriceRetrievedEventArgs e)
+        {
+            Console.WriteLine($"{e.Stock.Symbol}: {e.Stock.Price} {e.Stock.Deviation}");
+        }
+
         private void Search(string command)
         {
             if (command.Length <= 2)
@@ -76,11 +81,6 @@ namespace StockDataProvider.Startup
             {
                 Console.WriteLine(string.Join('\t', match));
             }
-        }
-
-        private void OnPriceRetrieved(object sender, PriceRetrievedEventArgs e)
-        {
-            Console.WriteLine($"{e.Stock.Symbol}: {e.Stock.Price} {e.Stock.Deviation}");
-        }
+        }        
     }
 }

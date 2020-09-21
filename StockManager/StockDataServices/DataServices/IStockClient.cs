@@ -4,10 +4,9 @@ namespace StockDataServices.DataServices
 {
     public interface IStockClient
     {
-        public decimal? GetPrice(string symbol);
+        public decimal? GetStockPrice(string symbol);
+        public string[] GetStockData(string symbol);
         public List<string[]> Search(string symbol);
-        public List<string[]> GetMonthlyPrice(string symbol);
-        public List<string> GetDailyPriceAndDeviation(string symbol);
-        public List<string[]> GetStockPriceData(string symbol);
+        public List<decimal> GetPricesAndDeviations(string symbol);
     }
 }

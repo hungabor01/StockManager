@@ -1,4 +1,5 @@
-﻿using ConsoleUI.Models;
+﻿using Common;
+using ConsoleUI.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -22,10 +23,9 @@ namespace ConsoleUI.FileOperations
         {
             _logger = logger;
 
-            if (options == null || options.Value == null || string.IsNullOrWhiteSpace(options.Value.CsvDelimiter))
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            options.ThrowExceptionIfOptionNotValid(nameof(options));
+            options.Value.CsvDelimiter.ThrowExceptionIfNullOrWhiteSpace(nameof(options.Value.CsvDelimiter));
+
             _delimiter = options.Value.CsvDelimiter;
         }
 

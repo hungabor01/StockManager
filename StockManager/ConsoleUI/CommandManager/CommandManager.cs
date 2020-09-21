@@ -1,5 +1,5 @@
-﻿using ConsoleUI.EventArgs;
-using ConsoleUI.ExtensionMethods;
+﻿using Common;
+using ConsoleUI.EventArgs;
 using ConsoleUI.FileOperations;
 using ConsoleUI.Models;
 using Microsoft.Extensions.Logging;
@@ -35,21 +35,11 @@ namespace ConsoleUI.CommandManager
             _fileOperations = fileOperations;
             _client = client;
 
-            if (options == null || options.Value == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
+            options.ThrowExceptionIfOptionNotValid(nameof(options));
+            options.Value.InputFilePath.ThrowExceptionIfNullOrWhiteSpace(nameof(options.Value.InputFilePath));
+            options.Value.OutputFilePath.ThrowExceptionIfNullOrWhiteSpace(nameof(options.Value.OutputFilePath));
 
-            if (string.IsNullOrWhiteSpace(options.Value.InputFilePath))
-            {
-                throw new ArgumentNullException(nameof(options.Value.InputFilePath));
-            }
             _inputFilePath = options.Value.InputFilePath;
-
-            if (string.IsNullOrWhiteSpace(options.Value.OutputFilePath))
-            {
-                throw new ArgumentNullException(nameof(options.Value.OutputFilePath));
-            }
             _outputFilePath = options.Value.OutputFilePath;
         }
 
@@ -58,7 +48,6 @@ namespace ConsoleUI.CommandManager
             var symbols = _fileOperations.ReadCsv(_inputFilePath);
 
             var stocks = new List<Stock>();
-
             int counter = 0;
 
             foreach (var symbol in symbols)
@@ -75,7 +64,6 @@ namespace ConsoleUI.CommandManager
                             Price = prices.First(),
                             Deviation = prices.GetDeviation()
                         };
-
                         stocks.Add(stock);
 
                         PriceRerieved(this, new PriceRetrievedEventArgs(stock));
@@ -86,6 +74,7 @@ namespace ConsoleUI.CommandManager
                     _logger.LogError(e, e.Message);
                 }
 
+                //AlphaVantage limits the request 5 per minutes
                 counter++;
                 if (counter % 5 == 0)
                 {

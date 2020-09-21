@@ -2,6 +2,7 @@
 using StockDataServices.Parameters;
 using StockDataServices.Models;
 using System.Collections.Generic;
+using Common;
 
 namespace StockDataServices.DataProviders
 {
@@ -11,6 +12,7 @@ namespace StockDataServices.DataProviders
 
         public AlphaVantageDataProvider(string apikey)
         {
+            apikey.ThrowExceptionIfNullOrWhiteSpace(nameof(apikey));
             _apiKey = apikey;
         }
 
